@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Dashboard</title>
+    
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .agent-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #22c55e;
+        }
+        
+        .status-dot.online {
+            background-color: #22c55e;
+        }
+        
+        .code-editor {
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        
+        .modal {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <noscript>
+        <strong>JavaScript is disabled. Some styling and interactive features might not work as intended.</strong>
+    </noscript>
+
+    <div class="min-h-screen flex flex-col">
+        <!-- Navigation -->
+        <nav class="bg-white border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex">
+                        <div class="flex-shrink-0 flex items-center">
+                            <span class="text-xl font-bold text-gray-900">MCP</span>
+                        </div>
+                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                            <button id="dashboard-tab" class="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-indigo-500 text-sm font-medium">
+                                <i class="fas fa-chart-line mr-2"></i>
+                                Dashboard
+                            </button>
+                            <button id="agents-tab" class="text-gray-500 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium">
+                                <i class="fas fa-robot mr-2"></i>
+                                Agents
+                            </button>
+                            <button id="tools-tab" class="text-gray-500 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium">
+                                <i class="fas fa-tools mr-2"></i>
+                                Tools
+                            </button>
+                            <button id="processes-tab" class="text-gray-500 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium">
+                                <i class="fas fa-project-diagram mr-2"></i>
+                                Processes
+                            </button>
+                            <button id="development-tab" class="text-gray-500 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium">
+                                <i class="fas fa-code mr-2"></i>
+                                Development
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <button id="add-agent-btn" class="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-plus mr-2"></i>
+                            New Agent
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-hidden">
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="h-full p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Active Agents Card -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold mb-4">Active Agents</h3>
+                        <div id="active-agents-dashboard" class="flex space-x-2">
+                            <!-- Active agents will be rendered here -->
+                        </div>
+                    </div>
+
+                    <!-- Development Activity Card -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold mb-4">Development Activity</h3>
+                        <div id="development-activity" class="space-y-4">
+                            <!-- Activity items will be rendered here -->
+                        </div>
+                    </div>
+
+                    <!-- Collaboration Graph Card -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold mb-4">Collaboration Network</h3>
+                        <canvas id="collaboration-graph" class="w-full h-48"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agents View -->
+            <div id="agents-view" class="hidden h-full p-6">
+                <div class="flex h-full space-x-6">
+                    <!-- Agents List -->
+                    <div class="w-1/3 bg-white rounded-lg shadow overflow-hidden">
+                        <div class="p-4 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold">Agents</h3>
+                        </div>
+                        <div id="agents-list" class="divide-y divide-gray-200">
+                            <!-- Agents will be listed here -->
+                        </div>
+                    </div>
+
+                    <!-- Agent Details -->
+                    <div class="flex-1 bg-white rounded-lg shadow overflow-hidden">
+                        <div id="agent-details-placeholder" class="h-full flex items-center justify-center text-gray-500">
+                            Select an agent to view details
+                        </div>
+                        <div id="agent-details" class="hidden h-full flex flex-col">
+                            <div class="p-6 border-b border-gray-200">
+                                <div class="flex items-center space-x-4">
+                                    <div id="agent-avatar" class="agent-avatar w-16 h-16 text-2xl"></div>
+                                    <div>
+                                        <h2 id="agent-name-display" class="text-2xl font-bold"></h2>
+                                        <p id="agent-type-display" class="text-gray-600"></p>
+                                    </div>
+                                    <div class="ml-auto">
+                                        <div id="agent-status" class="px-3 py-1 rounded-full text-sm font-medium"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-6 space-y-6 flex-1 overflow-y-auto">
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Specialization</h3>
+                                    <p id="agent-specialization-display" class="text-gray-900"></p>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Capabilities</h3>
+                                    <div id="agent-capabilities" class="flex flex-wrap gap-2">
+                                        <!-- Capabilities will be listed here -->
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Current Task</h3>
+                                    <p id="agent-task-display" class="text-gray-900"></p>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Collaborating With</h3>
+                                    <div id="agent-collaborators" class="flex space-x-2">
+                                        <!-- Collaborators will be listed here -->
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-6 border-t border-gray-200 bg-gray-50">
+                                <div class="flex space-x-3">
+                                    <button onclick="assignTask()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                                        <i class="fas fa-tasks mr-2"></i>
+                                        Assign Task
+                                    </button>
+                                    <button onclick="messageAgent()" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <i class="fas fa-comment mr-2"></i>
+                                        Message
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tools View -->
+            <div id="tools-view" class="hidden h-full">
+                <!-- Your existing tools view content -->
+            </div>
+
+            <!-- Processes View -->
+            <div id="processes-view" class="hidden h-full">
+                <!-- Your existing processes view content -->
+            </div>
+
+            <!-- Development View -->
+            <div id="development-view" class="hidden h-full">
+                <!-- Your existing development view content -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Agent Modal -->
+    <div id="add-agent-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-xl w-96 modal">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-bold">Create New Agent</h3>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Agent Name</label>
+                    <input type="text" id="agent-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Enter agent name">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Agent Type</label>
+                    <select id="agent-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <option value="developer">Developer</option>
+                        <option value="researcher">Researcher</option>
+                        <option value="analyst">Data Analyst</option>
+                        <option value="designer">UI Designer</option>
+                        <option value="qa">Quality Assurance</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Specialization</label>
+                    <input type="text" id="agent-specialization" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="e.g., API Development, Data Visualization">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Initial Capabilities</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="form-checkbox h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
+                            <span class="ml-2 text-sm text-gray-700">Tool Development</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="form-checkbox h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
+                            <span class="ml-2 text-sm text-gray-700">Process Automation</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="form-checkbox h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
+                            <span class="ml-2 text-sm text-gray-700">Code Review</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                <button id="cancel-add-agent" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button id="confirm-add-agent" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                    Create Agent
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Your existing JavaScript code here
+        const agents = [
+            { 
+                id: 1, 
+                name: "DevBot", 
+                type: "developer", 
+                specialization: "Tool Development", 
+                capabilities: ["JavaScript", "Node.js", "API Design"],
+                status: "active",
+                color: "bg-blue-500",
+                online: true,
+                currentTask: "Developing data_processor.js",
+                collaboration: ["DataBot", "AnalystBot"]
+            },
+            { 
+                id: 2, 
+                name: "DataBot", 
+                type: "analyst", 
+                specialization: "Data Processing", 
+                capabilities: ["Data Analysis", "ETL", "Python"],
+                status: "active",
+                color: "bg-green-500",
+                online: true,
+                currentTask: "Optimizing data pipelines",
+                collaboration: ["DevBot", "ResearchBot"]
+            },
+            { 
+                id: 3, 
+                name: "ResearchBot", 
+                type: "researcher", 
+                specialization: "Information Gathering", 
+                capabilities: ["Web Scraping", "Data Mining", "Trend Analysis"],
+                status: "active",
+                color: "bg-purple-500",
+                online: false,
+                currentTask: "Researching data validation techniques",
+                collaboration: ["DataBot", "AnalystBot"]
+            }
+        ];
+
+        // Initialize the app
+        function init() {
+            renderDashboard();
+            setupEventListeners();
+        }
+
+        // Render dashboard
+        function renderDashboard() {
+            renderActiveAgents();
+            renderDevelopmentActivity();
+            initializeCollaborationGraph();
+        }
+
+        // Render development activity
+        function renderDevelopmentActivity() {
+            const container = document.getElementById('development-activity');
+            if (container) {
+                const activities = [
+                    {
+                        agent: "DevBot",
+                        action: "Updated data_processor.js",
+                        time: "10 mins ago",
+                        color: "bg-blue-500"
+                    },
+                    {
+                        agent: "DataBot",
+                        action: "Optimized data pipeline",
+                        time: "25 mins ago",
+                        color: "bg-green-500"
+                    },
+                    {
+                        agent: "ResearchBot",
+                        action: "Added validation rules",
+                        time: "1 hour ago",
+                        color: "bg-purple-500"
+                    }
+                ];
+
+                container.innerHTML = activities.map(activity => `
+                    <div class="flex items-center space-x-3">
+                        <div class="agent-avatar ${activity.color}">${activity.agent[0]}</div>
+                        <div class="flex-1">
+                            <p class="text-sm">
+                                <span class="font-medium">${activity.agent}</span>
+                                ${activity.action}
+                            </p>
+                            <p class="text-xs text-gray-500">${activity.time}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Initialize collaboration graph
+        function initializeCollaborationGraph() {
+            const canvas = document.getElementById('collaboration-graph');
+            if (canvas && canvas.getContext) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Set canvas size
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+                
+                // Draw placeholder graph (simple circles and lines)
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const radius = 30;
+                
+                // Draw connections
+                ctx.beginPath();
+                ctx.moveTo(centerX - 50, centerY - 50);
+                ctx.lineTo(centerX + 50, centerY + 50);
+                ctx.moveTo(centerX - 50, centerY + 50);
+                ctx.lineTo(centerX + 50, centerY - 50);
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.stroke();
+                
+                // Draw nodes
+                ctx.beginPath();
+                ctx.arc(centerX - 50, centerY - 50, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = '#3b82f6';
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(centerX + 50, centerY - 50, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = '#10b981';
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(centerX, centerY + 50, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = '#8b5cf6';
+                ctx.fill();
+            }
+        }
+
+        // Render active agents
+        function renderActiveAgents() {
+            const container = document.getElementById('active-agents-dashboard');
+            if (container) {
+                container.innerHTML = agents
+                    .filter(agent => agent.online)
+                    .map(agent => `
+                        <div class="relative" data-tooltip="${agent.name}">
+                            <div class="agent-avatar ${agent.color}">${agent.name[0]}</div>
+                            <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                        </div>
+                    `).join('');
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Tab switching
+            const views = ['dashboard', 'agents', 'tools', 'processes', 'development'];
+            views.forEach(view => {
+                const tab = document.getElementById(`${view}-tab`);
+                if (tab) {
+                    tab.addEventListener('click', () => {
+                        showView(view);
+                        updateActiveTab(tab);
+                    });
+                }
+            });
+
+            // Modal handling
+            const addAgentBtn = document.getElementById('add-agent-btn');
+            const addAgentModal = document.getElementById('add-agent-modal');
+            const cancelAddAgent = document.getElementById('cancel-add-agent');
+            const confirmAddAgent = document.getElementById('confirm-add-agent');
+
+            if (addAgentBtn && addAgentModal) {
+                addAgentBtn.addEventListener('click', () => {
+                    addAgentModal.classList.remove('hidden');
+                });
+            }
+
+            if (cancelAddAgent) {
+                cancelAddAgent.addEventListener('click', () => {
+                    addAgentModal.classList.add('hidden');
+                });
+            }
+
+            if (confirmAddAgent) {
+                confirmAddAgent.addEventListener('click', () => {
+                    const nameInput = document.getElementById('agent-name');
+                    const typeSelect = document.getElementById('agent-type');
+                    const specializationInput = document.getElementById('agent-specialization');
+                    const capabilities = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+                        .map(checkbox => checkbox.nextElementSibling.textContent.trim());
+
+                    if (!nameInput.value) {
+                        alert('Please enter an agent name');
+                        return;
+                    }
+
+                    // Create new agent
+                    const newAgent = {
+                        id: agents.length + 1,
+                        name: nameInput.value,
+                        type: typeSelect.value,
+                        specialization: specializationInput.value,
+                        capabilities: capabilities,
+                        status: 'active',
+                        color: getRandomColor(),
+                        online: true,
+                        currentTask: `Initializing ${typeSelect.value} tasks`,
+                        collaboration: []
+                    };
+
+                    // Add to agents array
+                    agents.push(newAgent);
+
+                    // Reset form
+                    nameInput.value = '';
+                    typeSelect.selectedIndex = 0;
+                    specializationInput.value = '';
+                    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+                    // Close modal
+                    addAgentModal.classList.add('hidden');
+
+                    // Refresh dashboard
+                    renderDashboard();
+                });
+            }
+
+            // Close modal when clicking outside
+            if (addAgentModal) {
+                addAgentModal.addEventListener('click', (e) => {
+                    if (e.target === addAgentModal) {
+                        addAgentModal.classList.add('hidden');
+                    }
+                });
+            }
+        }
+
+        // Show the selected view and update navigation
+        function showView(view) {
+            // Hide all views
+            const views = ['dashboard', 'agents', 'tools', 'processes', 'development'];
+            views.forEach(v => {
+                const element = document.getElementById(`${v}-view`);
+                if (element) {
+                    element.classList.add('hidden');
+                }
+            });
+            
+            // Show selected view
+            const selectedView = document.getElementById(`${view}-view`);
+            if (selectedView) {
+                selectedView.classList.remove('hidden');
+                
+                // If showing agents view, render the agents list
+                if (view === 'agents') {
+                    renderAgentsList();
+                }
+            }
+
+            // Update tab styling
+            updateActiveTab(document.getElementById(`${view}-tab`));
+        }
+
+        // Update active tab styling
+        function updateActiveTab(activeTab) {
+            if (!activeTab) return;
+
+            const tabs = ['dashboard-tab', 'agents-tab', 'tools-tab', 'processes-tab', 'development-tab'];
+            tabs.forEach(tabId => {
+                const tab = document.getElementById(tabId);
+                if (tab) {
+                    tab.classList.remove('text-gray-900', 'border-indigo-500');
+                    tab.classList.add('text-gray-500', 'border-transparent');
+                }
+            });
+            
+            activeTab.classList.remove('text-gray-500', 'border-transparent');
+            activeTab.classList.add('text-gray-900', 'border-indigo-500');
+        }
+
+        // Helper function to generate random colors for new agents
+        function getRandomColor() {
+            const colors = [
+                'bg-blue-500',
+                'bg-green-500',
+                'bg-purple-500',
+                'bg-red-500',
+                'bg-yellow-500',
+                'bg-pink-500',
+                'bg-indigo-500',
+                'bg-teal-500'
+            ];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        // Render agents list
+        function renderAgentsList() {
+            const container = document.getElementById('agents-list');
+            if (container) {
+                container.innerHTML = agents.map(agent => `
+                    <div class="p-4 hover:bg-gray-50 cursor-pointer" onclick="showAgentDetails(${agent.id})">
+                        <div class="flex items-center space-x-3">
+                            <div class="agent-avatar ${agent.color}">${agent.name[0]}</div>
+                            <div class="flex-1">
+                                <p class="font-medium">${agent.name}</p>
+                                <p class="text-sm text-gray-500">${agent.type}</p>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="status-dot ${agent.online ? 'online' : ''}"></div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Show agent details
+        function showAgentDetails(agentId) {
+            const agent = agents.find(a => a.id === agentId);
+            if (!agent) return;
+
+            // Hide placeholder and show details
+            document.getElementById('agent-details-placeholder').classList.add('hidden');
+            document.getElementById('agent-details').classList.remove('hidden');
+
+            // Update agent details
+            document.getElementById('agent-avatar').className = `agent-avatar w-16 h-16 text-2xl ${agent.color}`;
+            document.getElementById('agent-avatar').textContent = agent.name[0];
+            document.getElementById('agent-name-display').textContent = agent.name;
+            document.getElementById('agent-type-display').textContent = agent.type;
+            document.getElementById('agent-specialization-display').textContent = agent.specialization;
+            
+            // Update status
+            const statusEl = document.getElementById('agent-status');
+            statusEl.className = `px-3 py-1 rounded-full text-sm font-medium ${
+                agent.online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+            }`;
+            statusEl.textContent = agent.online ? 'Online' : 'Offline';
+
+            // Update capabilities
+            const capsContainer = document.getElementById('agent-capabilities');
+            capsContainer.innerHTML = agent.capabilities.map(cap => `
+                <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
+                    ${cap}
+                </span>
+            `).join('');
+
+            // Update current task
+            document.getElementById('agent-task-display').textContent = agent.currentTask;
+
+            // Update collaborators
+            const collabContainer = document.getElementById('agent-collaborators');
+            collabContainer.innerHTML = agent.collaboration.map(name => {
+                const collaborator = agents.find(a => a.name === name);
+                return collaborator ? `
+                    <div class="relative" data-tooltip="${name}">
+                        <div class="agent-avatar ${collaborator.color}">${name[0]}</div>
+                        <div class="absolute -bottom-1 -right-1 w-3 h-3 ${
+                            collaborator.online ? 'bg-green-500' : 'bg-gray-500'
+                        } border-2 border-white rounded-full"></div>
+                    </div>
+                ` : '';
+            }).join('');
+        }
+
+        // Assign task to agent
+        function assignTask() {
+            const taskName = prompt('Enter task description:');
+            if (taskName) {
+                alert('Task assigned successfully!');
+            }
+        }
+
+        // Message agent
+        function messageAgent() {
+            const message = prompt('Enter your message:');
+            if (message) {
+                alert('Message sent successfully!');
+            }
+        }
+
+        // Initialize when DOM is loaded
+        function init() {
+            renderDashboard();
+            renderAgentsList();
+            setupEventListeners();
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
